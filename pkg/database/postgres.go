@@ -12,8 +12,11 @@ import (
 func ConnectDB() *gorm.DB {
 	dsn := config.GetEnv("DB_URL", "host=localhost user=postgres password=rahasia dbname=mydb port=5432 sslmode=disable TimeZone=Asia/Jakarta")
 
-	// 2. Buka Koneksi dengan GORM
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	db, err := gorm.Open(postgres.New(postgres.Config{
+		DSN:                  dsn,
+		PreferSimpleProtocol: true,
+	}), &gorm.Config{})
+
 	if err != nil {
 		log.Fatal("Gagal koneksi ke database:", err)
 	}
