@@ -6,7 +6,7 @@ type User struct {
 	ID           uint      `gorm:"primaryKey" json:"id"`
 	Fullname     string    `gorm:"type:varchar(255);not null" json:"fullname"`
 	Username     string    `gorm:"type:varchar(100);not null" json:"username"`
-	Email        string    `gorm:"type:varchar(150);not null" json:"email"`
+	Email        string    `gorm:"type:varchar(150);not null unique" json:"email"`
 	PhoneNumber  string    `gorm:"type:varchar(20);not null" json:"phone_number"`
 	Password     string    `gorm:"type:varchar(100);not null" json:"password"`
 	Role         string    `gorm:"type:varchar(20);not null" json:"role"`
