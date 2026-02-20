@@ -1,4 +1,4 @@
-
+# Akses link ini untuk testing api yang sudah dipublic: https://drive.google.com/file/d/1HXMPMaMNjXoNDvq_isqyHHrBq1U_xU7S/view?usp=sharingAkses link ini untuk testing api yang sudah dipublic: https://drive.google.com/file/d/1HXMPMaMNjXoNDvq_isqyHHrBq1U_xU7S/view?usp=sharing
 
 # Go Authentication API with Fiber & PostgreSQL
 
