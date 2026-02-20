@@ -51,3 +51,12 @@ func (r *UserRepository) FindByID(id uint) (*model.User, error) {
 	}
 	return &user, nil
 }
+
+func (r *UserRepository) CheckExistingUser(username, email, phone string) (*model.User, error) {
+	var user model.User
+	err := r.DB.Where("username = ? OR email = ? OR phone_number = ?", username, email, phone).First(&user).Error
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}

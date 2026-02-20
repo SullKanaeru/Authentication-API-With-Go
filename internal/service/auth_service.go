@@ -38,6 +38,30 @@ func (s *AuthService) Register(req model.RegisterRequest) error {
 		return errors.New("password dan konfirmasi password tidak cocok")
 	}
 
+	existingUser, err := s.Repo.CheckExistingUser(req.Username, req.Email, req.PhoneNumber)
+	
+	if err == nil && existingUser != nil {
+		
+		if existingUser.IsVerified {
+			return errors.New("pendaftaran gagal: username, email, atau nomor telepon sudah terdaftar")
+		}
+
+		hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+		newOTP := generateOTP()
+
+		existingUser.Password = string(hashedPassword)
+		existingUser.Fullname = req.Fullname 
+		existingUser.OTP = newOTP
+		existingUser.OTPExpiredAt = time.Now().Add(5 * time.Minute)
+
+		if err := s.Repo.UpdateUser(existingUser); err != nil {
+			return errors.New("gagal memperbarui data registrasi")
+		}
+
+		go s.sendVerification(existingUser, newOTP, req.SendNotificationTo)
+		return nil 
+	}
+
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return errors.New("gagal memproses password")
@@ -52,14 +76,14 @@ func (s *AuthService) Register(req model.RegisterRequest) error {
 		Email:        req.Email,
 		PhoneNumber:  req.PhoneNumber,
 		Password:     string(hashedPassword),
-		Role:         "user", 
+		Role:         "user",
 		IsVerified:   false,
 		OTP:          otp,
 		OTPExpiredAt: expiredAt,
 	}
 
 	if err := s.Repo.CreateUser(user); err != nil {
-		return errors.New("gagal mendaftarkan user (email/username/no telp mungkin sudah terdaftar)")
+		return errors.New("gagal membuat akun baru")
 	}
 
 	go s.sendVerification(user, otp, req.SendNotificationTo)
