@@ -22,16 +22,14 @@ func main() {
 
 	userRepo := repository.NewUserRepository(db)
 
-	notifSecret := service.NewNotificationService(
-		config.GetEnv("SMTP_HOST", "smtp.gmail.com"),
-		config.GetEnv("SMTP_PORT", "587"),
-		config.GetEnv("SMTP_EMAIL", ""),
-		config.GetEnv("SMTP_PASSWORD", ""),
-		config.GetEnv("SMTP_SENDER_NAME", "my app"),
+	notifService := service.NewNotificationService(
+		config.GetEnv("BREVO_API_KEY", ""),
+		config.GetEnv("SENDER_EMAIL", ""),
+		config.GetEnv("SENDER_NAME", "Aplikasi Saya"),
 		config.GetEnv("FONNTE_TOKEN", ""),
 	)
 	
-	authService := service.NewAuthService(userRepo, config.GetEnv("JWT_SECRET", "default_secret"), notifSecret)
+	authService := service.NewAuthService(userRepo, config.GetEnv("JWT_SECRET", "default_secret"), notifService)
 	authHandler := handler.NewAuthHandler(authService)
 	userHandler := handler.NewUserHandler(userRepo)
 

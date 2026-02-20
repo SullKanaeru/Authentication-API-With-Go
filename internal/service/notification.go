@@ -6,41 +6,70 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/smtp"
 )
 
 type NotificationService struct {
-	SMTPHost    string
-	SMTPPort    string
-	SMTPUser    string
-	SMTPPass    string
-	SMTPSender  string
+	BrevoAPIKey string
+	SenderEmail string
+	SenderName  string
 	FonnteToken string
 }
 
-func NewNotificationService(host, port, user, pass, sender, fonnteToken string) *NotificationService {
+func NewNotificationService(brevoKey, senderEmail, senderName, fonnteToken string) *NotificationService {
 	return &NotificationService{
-		SMTPHost:    host,
-		SMTPPort:    port,
-		SMTPUser:    user,
-		SMTPPass:    pass,
-		SMTPSender:  sender,
+		BrevoAPIKey: brevoKey,
+		SenderEmail: senderEmail,
+		SenderName:  senderName,
 		FonnteToken: fonnteToken,
 	}
 }
 
+// Logika Kirim Email via Brevo API (Anti-Blokir)
 func (n *NotificationService) SendEmail(to, subject, body string) error {
-	auth := smtp.PlainAuth("", n.SMTPUser, n.SMTPPass, n.SMTPHost)
-	
-	msg := []byte(fmt.Sprintf("From: %s <%s>\r\nTo: %s\r\nSubject: %s\r\n\r\n%s", n.SMTPSender, n.SMTPUser, to, subject, body))
-	
-	addr := fmt.Sprintf("%s:%s", n.SMTPHost, n.SMTPPort)
-	return smtp.SendMail(addr, auth, n.SMTPUser, []string{to}, msg)
+	url := "https://api.brevo.com/v3/smtp/email"
+
+	// Format payload sesuai standar Brevo
+	payload := map[string]interface{}{
+		"sender": map[string]string{
+			"name":  n.SenderName,
+			"email": n.SenderEmail,
+		},
+		"to": []map[string]string{
+			{
+				"email": to,
+			},
+		},
+		"subject":     subject,
+		"textContent": body,
+	}
+
+	payloadBytes, _ := json.Marshal(payload)
+
+	req, _ := http.NewRequest("POST", url, bytes.NewBuffer(payloadBytes))
+	req.Header.Set("accept", "application/json")
+	req.Header.Set("api-key", n.BrevoAPIKey)
+	req.Header.Set("content-type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	// Brevo mengembalikan status 201 Created jika sukses
+	if resp.StatusCode >= 400 {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("error dari brevo: %s", string(bodyBytes))
+	}
+
+	return nil
 }
 
+// Logika Kirim WA via Fonnte (Tetap Sama)
 func (n *NotificationService) SendWhatsApp(target, message string) error {
 	url := "https://api.fonnte.com/send"
-	
+
 	payload := map[string]string{
 		"target":  target,
 		"message": message,
