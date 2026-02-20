@@ -1,0 +1,54 @@
+package main
+
+import (
+	"log"
+	"authentication_api/internal/config"
+	"authentication_api/internal/handler"
+	"authentication_api/internal/repository"
+	"authentication_api/internal/service"
+	"authentication_api/internal/middleware"
+	"authentication_api/pkg/database"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/logger"
+)
+
+func main() {
+	config.LoadConfig()
+
+	db := database.ConnectDB()
+	database.MigrateDB(db)
+
+	userRepo := repository.NewUserRepository(db)
+
+	notifSecret := service.NewNotificationService(
+		config.GetEnv("SMTP_HOST", "smtp.gmail.com"),
+		config.GetEnv("SMTP_PORT", "587"),
+		config.GetEnv("SMTP_EMAIL", ""),
+		config.GetEnv("SMTP_PASSWORD", ""),
+		config.GetEnv("SMTP_SENDER_NAME", "my app"),
+		config.GetEnv("FONNTE_TOKEN", ""),
+	)
+	
+	authService := service.NewAuthService(userRepo, config.GetEnv("JWT_SECRET", "default_secret"), notifSecret)
+	authHandler := handler.NewAuthHandler(authService)
+	userHandler := handler.NewUserHandler(userRepo)
+
+	app := fiber.New()
+	app.Use(logger.New()) 
+
+	api := app.Group("/api/v1")
+	auth := api.Group("/auth")
+	
+	auth.Post("/register", authHandler.Register)
+	auth.Post("/login", authHandler.Login)
+	auth.Post("/logout", authHandler.Logout)
+	auth.Post("/verify", authHandler.VerifyOTP)
+
+	users := api.Group("/users", middleware.RequireAuth())
+	users.Get("/me", userHandler.GetProfile)
+
+	port := config.GetEnv("PORT", "3000")
+	log.Printf("Server berjalan di port %s", port)
+	log.Fatal(app.Listen(":" + port))
+}
