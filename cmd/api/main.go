@@ -24,8 +24,8 @@ func main() {
 
 	notifService := service.NewNotificationService(
 		config.GetEnv("BREVO_API_KEY", ""),
-		config.GetEnv("SENDER_EMAIL", ""),
-		config.GetEnv("SENDER_NAME", "Aplikasi Saya"),
+		config.GetEnv("SMTP_EMAIL", ""),
+		config.GetEnv("SMTP_SENDER_NAME", "Aplikasi Saya"),
 		config.GetEnv("FONNTE_TOKEN", ""),
 	)
 	
