@@ -195,7 +195,3 @@ Berikut adalah daftar *endpoint* yang tersedia untuk diuji coba melalui Postman 
 * **URL:** `/api/v1/auth/logout`
 * **Method:** `POST`
 * **Response (200 OK):** Menghapus *Cookie* `jwt_token` dari *client*.
-
-```
-
-***
